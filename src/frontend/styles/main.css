@@ -1,0 +1,13 @@
+.main-header {
+    text-align: center;
+}
+
+.general-info {
+    text-align: center;
+}
+
+.general-button {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
