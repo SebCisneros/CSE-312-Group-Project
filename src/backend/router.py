@@ -1,5 +1,5 @@
 class Router:
-    # Keeps track of which route redirects
+    # Keeps track of where routes redirect to (if applicable)
     redirect_dict = {}
     # Keeps track of content types for each route
     content_type_dict = {}
