@@ -141,6 +141,7 @@ if __name__ == "__main__":
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), ''))
     routing.create_route("/", None, "text/html", (root + r"/index.html"))
     routing.create_route("/login", None, "text/html", (root + r"/frontend/pages/login.html"))
+    routing.create_route("/registration", None, "text/html", (root + r"/frontend/pages/registration.html"))
     routing.create_route("/style.css", None, "text/css", (root + r"/style.css"))
     routing.create_route("/functions.js", None, "text/javascript", (root + r"/functions.js"))
 
