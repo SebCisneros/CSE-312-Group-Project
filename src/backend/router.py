@@ -7,6 +7,7 @@ class Router:
     content_dict = {}
 
     # Add route to dictionaries
+    # format is (browser path, path to redirect to, http content type, file / text)
     def create_route(self, path, redirect, content_type, content):
         self.redirect_dict[path] = redirect
         self.content_type_dict[path] = content_type
