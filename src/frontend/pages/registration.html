@@ -12,13 +12,13 @@
 <h1 class="main-header">User Registration</h1>
 <form id="registration-form" action="/login" method="post" enctype="multipart/form-data">
     <h2 class="registration-header">Email</h2>
-    <input class="text-field" id="email_input" type="email"/>
+    <input class="text-field" id="email_input" name="email" type="email"/>
     <h2 class="registration-header">Username</h2>
-    <input class="text-field" id="username_input" type="text"/>
+    <input class="text-field" id="username_input" name="username" type="text"/>
     <h2 class="registration-header">Password</h2>
-    <input class="text-field" id="password_input" type="password"/>
+    <input class="text-field" id="password_input" name="password" type="password"/>
     <h2 class="registration-header">Confirm Password</h2>
-    <input class="text-field" id="password_confirmation" type="password"/>
+    <input class="text-field" id="password_confirmation" name="password" type="password"/>
     <br/>
     <button type="submit" onclick="confirm_registration()" value="Post" class="submit-button"><span>Register</span></button>
 </form>
