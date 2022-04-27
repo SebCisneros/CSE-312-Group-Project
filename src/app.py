@@ -170,6 +170,10 @@ class request_handler(socketserver.BaseRequestHandler):
         print(client_id)
         self.get_headers(received_data)
 
+    # Does things based on what is in a multipart form
+    def multipartFormActions():
+        print("tset")
+
     def sanitize_input(self, user_input):
         user_input1 = user_input.replace('&', '&amp;')
         user_input2 = user_input1.replace('<', '&lt')
