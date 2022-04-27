@@ -12,11 +12,12 @@
 <h1 class="main-header">Login</h1>
 <form id="login-form" action="/login" method="post" enctype="multipart/form-data">
     <h2 class="login-header">Email</h2>
-    <input class="text-field" type="email"/>
+    <input class="text-field" name="email" type="email"/>
     <h2 class="login-header">Password</h2>
-    <input class="text-field" type="password"/>
+    <input class="text-field" name="password" type="password"/>
     <br/>
-    <button type="submit" value="Post" class="submit-button"><span>Submit</span></button>
+    <button type="submit" value="Post" class="submit-button"><span>Login</span></button>
 </form>
+<button class="general-button" onclick="window.location.href='/registration'">Don't have an account? Register.</button>
 </body>
 </html>

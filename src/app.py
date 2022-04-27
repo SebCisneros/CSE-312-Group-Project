@@ -50,7 +50,8 @@ class request_handler(socketserver.BaseRequestHandler):
             self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None)
 
     def interpret_POST(self, content):
-        record = json.loads(content)
+        #parse content dictionary here
+        record = content
         # set response equal to DB modification function
         response = None
         # Update routes
@@ -67,44 +68,90 @@ class request_handler(socketserver.BaseRequestHandler):
         self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None)
 
     def get_headers(self, received_data):
-        decoded_data = received_data.decode().split('\r\n\r\n', 1)
+        decoded_data = received_data.split(b'\r\n\r\n', 1)
         content = decoded_data[1]
-        data_types = decoded_data[0].split(' ', 2)
+        data_types = decoded_data[0].decode().split(' ', 2)
         request_method = data_types[0]
         request_uri = data_types[1]
         http_content = data_types[2].split('\r\n', 1)
         http_version = http_content[0]
         header_array = http_content[1].split('\r\n')
         header_dict = {}
-        print(len(received_data))
-        print(received_data)
-        sys.stdout.flush()
-        sys.stderr.flush()
         for value in header_array:
             value_array = value.split(":", 1)
             header_dict[value_array[0]] = str.lstrip(value_array[1])
         if "Content-Length" in header_dict:
-            if int(header_dict["Content-Length"]) > 1024:
-                packet_size = 1024
-                content = content.encode()
+            if int(header_dict["Content-Length"]) + len(received_data) > 2048:
+                packet_size = 2048
                 while packet_size < int(header_dict["Content-Length"]):
-                    content = content + self.request.recv(1024)
-                    packet_size += 1024
-                print(content)
+                    content = content + self.request.recv(2048)
+                    packet_size += 2048
+                # print(content)
                 sys.stdout.flush()
                 sys.stderr.flush()
             else:
-                print(len(received_data))
+                # print(len(received_data))
                 print(received_data)
-                print(received_data.decode())
+                # print(received_data.decode())
+                print(content)
                 sys.stdout.flush()
                 sys.stderr.flush()
+
+        if "Content-Type" in header_dict:
+            if "text" in header_dict["Content-Type"]:
+                content = content.decode()
+
         match request_method:
             case "GET":
                 self.interpret_GET(request_uri)
 
             case "POST":
-                self.interpret_POST(content)
+                if "Content-Type" in header_dict:
+                    if "multipart/form-data" in header_dict["Content-Type"]:
+                        data_dict = {}
+                        boundary = header_dict["Content-Type"].split("boundary=", 1)
+                        print("boundary=" + boundary[1])
+                        form_data = content.split(bytes(("--" + boundary[1]), "UTF-8"))
+                        for i in form_data:
+                            if (i != b"") and (i != b"--\r\n"):
+                                # print("boundary data:  " + i.decode())
+                                decoded_boundary = i.split(b'\r\n\r\n', 1)
+                                boundary_header_array = decoded_boundary[0].decode().split('\r\n')
+                                boundary_header_dict = {}
+                                for boundary_value in boundary_header_array:
+                                    boundary_value_array = boundary_value.split(":", 1)
+                                    if len(boundary_value_array) > 1:
+                                        boundary_header_dict[boundary_value_array[0]] = str.lstrip(
+                                            boundary_value_array[1])
+                                if "Content-Disposition" in boundary_header_dict:
+                                    disposition_info_array = boundary_header_dict["Content-Disposition"].split("; ")
+                                    disposition_info_dict = {}
+                                    for disposition_value in disposition_info_array:
+                                        disposition_value_array = disposition_value.split("=", 1)
+                                        if len(disposition_value_array) > 1:
+                                            disposition_info_dict[disposition_value_array[0]] = disposition_value_array[
+                                                1].strip('"')
+                                    if "name" in disposition_info_dict:
+                                        if disposition_info_dict["name"] == "email":
+                                            parsed_email = self.sanitize_input(decoded_boundary[1].decode())
+                                            print("email: " + parsed_email)
+                                            data_dict["email"] = parsed_email
+                                            sys.stdout.flush()
+                                            sys.stderr.flush()
+                                        if disposition_info_dict["name"] == "username":
+                                            parsed_username = self.sanitize_input(decoded_boundary[1].decode())
+                                            print("username: " + parsed_username)
+                                            data_dict["username"] = parsed_username
+                                            sys.stdout.flush()
+                                            sys.stderr.flush()
+                                        if disposition_info_dict["name"] == "password":
+                                            parsed_password = self.sanitize_input(decoded_boundary[1].decode())
+                                            print("password: " + parsed_password)
+                                            data_dict["password"] = parsed_password
+                                            sys.stdout.flush()
+                                            sys.stderr.flush()
+                        self.interpret_POST(data_dict)
+
 
             case "PUT":
                 self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None)
@@ -113,7 +160,7 @@ class request_handler(socketserver.BaseRequestHandler):
                 self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None)
 
     def handle(self):
-        received_data = self.request.recv(1024)
+        received_data = self.request.recv(2048)
         print(received_data)
         sys.stdout.flush()
         sys.stderr.flush()
@@ -140,6 +187,8 @@ if __name__ == "__main__":
     # Initialize routes
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), ''))
     routing.create_route("/", None, "text/html", (root + r"/index.html"))
+    routing.create_route("/login", None, "text/html", (root + r"/frontend/pages/login.html"))
+    routing.create_route("/registration", None, "text/html", (root + r"/frontend/pages/registration.html"))
     routing.create_route("/style.css", None, "text/css", (root + r"/style.css"))
     routing.create_route("/functions.js", None, "text/javascript", (root + r"/functions.js"))
 
