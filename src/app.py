@@ -121,9 +121,15 @@ class request_handler(socketserver.BaseRequestHandler):
                                     disposition_info_array = boundary_header_dict["Content-Disposition"].split("; ")
                                     disposition_info_dict = self.createDispositionInfoDict(disposition_info_array)
                                     if "name" in disposition_info_dict:
-                                        #match disposition_info_dict["name"]:
-                                        #S    case
-
+                                        match disposition_info_dict["name"]:
+                                            case "email":
+                                                #since emails is first use this to check if it's registration or login
+                                                print("")
+                                            case "username":
+                                                #If username is first, use this to see if login
+                                                print("")
+                                            case "password":
+                                                print("")
 
                                         if disposition_info_dict["name"] == "email":
                                             parsed_email = self.sanitize_input(decoded_boundary[1].decode())
