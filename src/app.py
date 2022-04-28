@@ -95,16 +95,6 @@ class request_handler(socketserver.BaseRequestHandler):
                 while packet_size < int(header_dict["Content-Length"]):
                     content = content + self.request.recv(2048)
                     packet_size += 2048
-                # print(content)
-                sys.stdout.flush()
-                sys.stderr.flush()
-            else:
-                # print(len(received_data))
-                print(received_data)
-                # print(received_data.decode())
-                print(content)
-                sys.stdout.flush()
-                sys.stderr.flush()
 
         if "Content-Type" in header_dict:
             if "text" in header_dict["Content-Type"]:
@@ -118,11 +108,9 @@ class request_handler(socketserver.BaseRequestHandler):
                 if "Content-Type" in header_dict and "multipart/form-data" in header_dict["Content-Type"]:
                         data_dict = {}
                         boundary = header_dict["Content-Type"].split("boundary=", 1)
-                        #print("boundary=" + boundary[1])
                         form_data = content.split(bytes(("--" + boundary[1]), "UTF-8"))
                         for i in form_data:
                             if (i != b"") and (i != b"--\r\n"):
-                                # print("boundary data:  " + i.decode())
                                 decoded_boundary = i.split(b'\r\n\r\n', 1)
                                 boundary_header_array = decoded_boundary[0].decode().split('\r\n')
                                 boundary_header_dict = self.createBoundaryHeaderDict(boundary_header_array)
@@ -154,13 +142,9 @@ class request_handler(socketserver.BaseRequestHandler):
 
     def handle(self):
         received_data = self.request.recv(2048)
-        print(received_data)
-        sys.stdout.flush()
-        sys.stderr.flush()
         if len(received_data) == 0:
             return
         client_id = self.client_address[0] + ":" + str(self.client_address[1])
-        print(client_id)
         self.get_headers(received_data)
 
     def createBoundaryHeaderDict(self, boundary_header_array):
