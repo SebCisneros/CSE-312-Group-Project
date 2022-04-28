@@ -128,6 +128,11 @@ class request_handler(socketserver.BaseRequestHandler):
                                                 parsed_data = self.sanitize_input(decoded_boundary[1].decode())
                                                 data_dict[disposition_info_dict["name"]] = parsed_data
                         print(data_dict)
+
+                        #Do stuff to data dic
+
+
+
                         sys.stdout.flush()
                         sys.stderr.flush()
                         self.interpret_POST(data_dict)
