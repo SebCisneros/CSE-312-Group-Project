@@ -10,9 +10,17 @@ import os
 
 import json
 
+from pymongo import MongoClient
 
 from backend.router import Router
 
+
+
+client = MongoClient('localhost', 27017)
+
+usersDB = client['users']
+
+userAccountCollection = usersDB["user_accounts"]
 
 class request_handler(socketserver.BaseRequestHandler):
     # List of codes that send content to the client
