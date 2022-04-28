@@ -16,7 +16,7 @@ from backend.router import Router
 
 
 
-client = MongoClient('localhost', 27017)
+client = MongoClient("mongodb://mongo:27017/newdock")
 
 usersDB = client['users']
 
@@ -122,6 +122,9 @@ class request_handler(socketserver.BaseRequestHandler):
                                         match disposition_info_dict["name"]:
                                             case "email" | "username" | "password" | "passwordConfirmation":
                                                 parsed_data = self.sanitize_input(decoded_boundary[1].decode())
+
+                                                something = userAccountCollection.insert_one({'x': 1})
+
                                                 data_dict[disposition_info_dict["name"]] = parsed_data
                         print(data_dict)
 
