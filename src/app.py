@@ -106,32 +106,25 @@ class request_handler(socketserver.BaseRequestHandler):
                 self.interpret_GET(request_uri)
 
             case "POST":
-                if "Content-Type" in header_dict:
-                    if "multipart/form-data" in header_dict["Content-Type"]:
+                if "Content-Type" in header_dict and "multipart/form-data" in header_dict["Content-Type"]:
                         data_dict = {}
                         boundary = header_dict["Content-Type"].split("boundary=", 1)
-                        print("boundary=" + boundary[1])
+                        #print("boundary=" + boundary[1])
                         form_data = content.split(bytes(("--" + boundary[1]), "UTF-8"))
                         for i in form_data:
                             if (i != b"") and (i != b"--\r\n"):
                                 # print("boundary data:  " + i.decode())
                                 decoded_boundary = i.split(b'\r\n\r\n', 1)
                                 boundary_header_array = decoded_boundary[0].decode().split('\r\n')
-                                boundary_header_dict = {}
-                                for boundary_value in boundary_header_array:
-                                    boundary_value_array = boundary_value.split(":", 1)
-                                    if len(boundary_value_array) > 1:
-                                        boundary_header_dict[boundary_value_array[0]] = str.lstrip(
-                                            boundary_value_array[1])
+                                boundary_header_dict = self.createBoundaryHeaderDict(boundary_header_array)
                                 if "Content-Disposition" in boundary_header_dict:
                                     disposition_info_array = boundary_header_dict["Content-Disposition"].split("; ")
-                                    disposition_info_dict = {}
-                                    for disposition_value in disposition_info_array:
-                                        disposition_value_array = disposition_value.split("=", 1)
-                                        if len(disposition_value_array) > 1:
-                                            disposition_info_dict[disposition_value_array[0]] = disposition_value_array[
-                                                1].strip('"')
+                                    disposition_info_dict = self.createDispositionInfoDict(disposition_info_array)
                                     if "name" in disposition_info_dict:
+                                        #match disposition_info_dict["name"]:
+                                        #S    case
+
+
                                         if disposition_info_dict["name"] == "email":
                                             parsed_email = self.sanitize_input(decoded_boundary[1].decode())
                                             print("email: " + parsed_email)
@@ -170,9 +163,24 @@ class request_handler(socketserver.BaseRequestHandler):
         print(client_id)
         self.get_headers(received_data)
 
-    # Does things based on what is in a multipart form
-    def multipartFormActions():
-        print("tset")
+    def createBoundaryHeaderDict(self, boundary_header_array):
+        boundary_header_dict = {}
+        for boundary_value in boundary_header_array:
+            boundary_value_array = boundary_value.split(":", 1)
+            if len(boundary_value_array) > 1:
+                boundary_header_dict[boundary_value_array[0]] = str.lstrip(
+                    boundary_value_array[1])
+        return boundary_header_dict
+
+    def createDispositionInfoDict(self, disposition_info_array):
+        disposition_info_dict = {}
+        for disposition_value in disposition_info_array:
+            disposition_value_array = disposition_value.split("=", 1)
+            if len(disposition_value_array) > 1:
+                disposition_info_dict[disposition_value_array[0]] = disposition_value_array[
+                    1].strip('"')
+        return disposition_info_dict
+
 
     def sanitize_input(self, user_input):
         user_input1 = user_input.replace('&', '&amp;')
