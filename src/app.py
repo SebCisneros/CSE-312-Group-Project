@@ -1,4 +1,5 @@
 
+from email.mime import multipart
 import socketserver
 
 # stderr & stdout
@@ -120,35 +121,15 @@ class request_handler(socketserver.BaseRequestHandler):
                                 if "Content-Disposition" in boundary_header_dict:
                                     disposition_info_array = boundary_header_dict["Content-Disposition"].split("; ")
                                     disposition_info_dict = self.createDispositionInfoDict(disposition_info_array)
+
                                     if "name" in disposition_info_dict:
                                         match disposition_info_dict["name"]:
-                                            case "email":
-                                                #since emails is first use this to check if it's registration or login
-                                                print("")
-                                            case "username":
-                                                #If username is first, use this to see if login
-                                                print("")
-                                            case "password":
-                                                print("")
-
-                                        if disposition_info_dict["name"] == "email":
-                                            parsed_email = self.sanitize_input(decoded_boundary[1].decode())
-                                            print("email: " + parsed_email)
-                                            data_dict["email"] = parsed_email
-                                            sys.stdout.flush()
-                                            sys.stderr.flush()
-                                        if disposition_info_dict["name"] == "username":
-                                            parsed_username = self.sanitize_input(decoded_boundary[1].decode())
-                                            print("username: " + parsed_username)
-                                            data_dict["username"] = parsed_username
-                                            sys.stdout.flush()
-                                            sys.stderr.flush()
-                                        if disposition_info_dict["name"] == "password":
-                                            parsed_password = self.sanitize_input(decoded_boundary[1].decode())
-                                            print("password: " + parsed_password)
-                                            data_dict["password"] = parsed_password
-                                            sys.stdout.flush()
-                                            sys.stderr.flush()
+                                            case "email" | "username" | "password" | "passwordConfirmation":
+                                                parsed_data = self.sanitize_input(decoded_boundary[1].decode())
+                                                data_dict[disposition_info_dict["name"]] = parsed_data
+                        print(data_dict)
+                        sys.stdout.flush()
+                        sys.stderr.flush()
                         self.interpret_POST(data_dict)
 
 
