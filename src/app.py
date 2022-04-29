@@ -121,7 +121,7 @@ class request_handler(socketserver.BaseRequestHandler):
                                     if "name" in disposition_info_dict:
                                         match disposition_info_dict["name"]:
                                             case "email" | "username" | "password" | "passwordConfirmation":
-                                                parsed_data = self.sanitize_input(decoded_boundary[1].decode())
+                                                parsed_data = self.sanitize_input(decoded_boundary[1].decode()).rstrip()
 
                                                 #something = userAccountCollection.insert_one({'x': 1})
 
