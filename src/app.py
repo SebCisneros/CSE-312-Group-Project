@@ -173,7 +173,13 @@ class request_handler(socketserver.BaseRequestHandler):
 
     def insertNewUser(self, dataDic):
         if dataDic["password"] == dataDic["passwordConfirmation"]:
-            bruh = userAccountCollection.insert_one(dataDic)
+
+            newUserEntry = {
+                "email": dataDic["email"],
+                "username": dataDic["username"],
+            }
+
+            userAccountCollection.insert_one(newUserEntry)
         
 
 
