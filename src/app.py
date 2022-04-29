@@ -177,6 +177,7 @@ class request_handler(socketserver.BaseRequestHandler):
             newUserEntry = {
                 "email": dataDic["email"],
                 "username": dataDic["username"],
+                "password": dataDic["password"]
             }
 
             userAccountCollection.insert_one(newUserEntry)
