@@ -123,15 +123,13 @@ class request_handler(socketserver.BaseRequestHandler):
                                             case "email" | "username" | "password" | "passwordConfirmation":
                                                 parsed_data = self.sanitize_input(decoded_boundary[1].decode())
 
-                                                something = userAccountCollection.insert_one({'x': 1})
+                                                #something = userAccountCollection.insert_one({'x': 1})
 
                                                 data_dict[disposition_info_dict["name"]] = parsed_data
                         print(data_dict)
 
                         #Do stuff to data dic
-
-
-
+                        self.multipartDataProcessing(data_dict)
                         sys.stdout.flush()
                         sys.stderr.flush()
                         self.interpret_POST(data_dict)
@@ -167,6 +165,16 @@ class request_handler(socketserver.BaseRequestHandler):
                 disposition_info_dict[disposition_value_array[0]] = disposition_value_array[
                     1].strip('"')
         return disposition_info_dict
+
+    def multipartDataProcessing(self, dataDic):
+        #If user is registering
+        if "passwordConfirmation" in dataDic:
+            self.insertNewUser(dataDic)
+
+    def insertNewUser(self, dataDic):
+        if dataDic["password"] == dataDic["passwordConfirmation"]:
+            bruh = userAccountCollection.insert_one(dataDic)
+        
 
 
     def sanitize_input(self, user_input):
