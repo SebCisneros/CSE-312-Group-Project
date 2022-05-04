@@ -10,7 +10,7 @@ users_id_collection = db['users_id']
 
 
 def get_next_id():
-    """Creates a custom id values"""
+    """Creates custom id values"""
     id_object = users_id_collection.find_one({})
     if id_object:
         next_id = int(id_object['last_id']) + 1
@@ -49,6 +49,3 @@ def update(user_find: dict, user_update: dict):
 
 def delete(user: dict):
     users_collection.delete_one(user)
-
-
-

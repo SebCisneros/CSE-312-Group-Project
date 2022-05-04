@@ -1,101 +1,91 @@
 import json
 import sys
 
-# import util.database as db
-# from util.response import generate_response
-# from util.router import Route
-# from util.request import Request
-#
-#
-# def add_paths(router):
-#     router.add_route(Route('POST', '/users', create))
-#     router.add_route(Route('GET', '/users/.', retrieve))
-#     router.add_route(Route('GET', '/users', list_all))
-#     router.add_route(Route('PUT', '/users/.', update))
-#     router.add_route(Route('DELETE', '/users/.', delete))
+import database as db
 
 
-def parse_user_id(request):
+# TODO: Test the API in Docker to see if it works.
+def parse_user_id(request_path: str):
     """
-    Parses the request to find the user_id
-    :param request: path from the request
-    :return: Dictionary with `id` as key and int _id as value
+        Parses the request path to find the user_id and puts it in {'id': #} dictionary format
+
+        :param request_path: path from the request
+        :return: Dictionary with `id` as key and int _id as value
     """
-    path_split = request.path.split('/')
+    path_split = request_path.split('/')
     _id = int(path_split[2])
     id_dict = {'id': _id}
     return id_dict
 
 
-def create(request, handler):
+def create(content: bytes):
     """Creates the collection calling db.create() using the body of Request and sends '201 created response code"""
 
-    body_string = request.body.decode()
-    body_dict = json.loads(body_string)
+    body_dict = json.loads(content.decode())
     body_dict['id'] = db.get_next_id()
 
     db.create(body_dict)
-
-    response = generate_response(json.dumps(body_dict).encode(), 'application/json', '201 Created')
-    handler.request.sendall(response)
-
-
-# To-Do: add retrieve, list_all, update, delete methods in this file
-def list_all(request, handler):
-    """Shows all the contents of the collection calling db.list_all() function"""
-
-    response = generate_response(json.dumps(db.list_all()).encode(), 'application/json', '200 Ok')
-    handler.request.sendall(response)
+    print("Record created")
+    return body_dict
 
 
-def retrieve(request, handler):
-    """Retrieves the information about a specific id."""
+def list_all():
+    """returns all the users and their information stored in the database"""
 
-    id = parse_user_id(request)
-    print(id)
+    response = db.list_all()
+    return response
 
+
+def retrieve(request_uri: str):
+    """
+        Retrieves the information about a specific id.
+
+        :param request_uri: HTTP request path
+        :return None if the user doesn't exist, the user information if the user exists
+    """
+
+    # is the id going to be parsed and provided for list_all
+    id = parse_user_id(request_uri)
     response_body = db.retrieve_single(id)
-    print(response_body)
     if response_body is not None:
-        response = generate_response(json.dumps(response_body).encode(), 'application/json', '200 Ok')
-        handler.request.sendall(response)
+        print("User doesn't exist")
+        return response_body
     else:
-        response = generate_response('Not Found'.encode(), 'text/plain; charset=utf-8', '404 Not Found')
-        handler.request.sendall(response)
+        print("User found...")
+        return response_body
 
 
-def update(request, handler):
-    """Checks if the id exists or not based on that updates the id with body retrieved from Request(in dictionary format)
-        and sends appropriate response."""
+def update(content: bytes, request_uri: str):
+    """
+        Takes the content in byte format and request path and updates by finding the user from path with the content
+        provided
 
-    id = parse_user_id(request)
-    update_info = json.loads(request.body.decode())
+        :param content: raw bytes from the request body
+        :param request_uri: http request path
+        :return None if the user doesn't exist otherwise just prints if it's updated
+    """
+
+    id = parse_user_id(request_uri)
+    update_info = json.loads(content.decode())
     print(update_info)
     print(type(update_info))
     exists = db.retrieve_single(id)
     if exists is None:
-        response = generate_response('Not Found'.encode(), 'text/plain; charset=utf-8', '404 Not Found')
-        handler.request.sendall(response)
+        print("Couldn't find the user.")
+        return exists
     else:
         db.update(id, update_info)
-        response = response = generate_response('update done'.encode(), 'text/plain; charset=utf-8', '200 Ok')
-        handler.request.sendall(response)
+        print("Information updated...")
 
 
-def delete(request, handler):
+def delete(request_uri: str):
     """Deletes the information of an id if it exists"""
-    id = parse_user_id(request)
+
+    id = parse_user_id(request_uri)
     exists = db.retrieve_single(id)
     if exists is None:
-        response = generate_response('Not Found'.encode(), 'text/plain; charset=utf-8', '404 Not Found')
-        handler.request.sendall(response)
+        print("User doesn't exists")
+        return exists
     else:
         db.delete(id)
-        response = response = generate_response(b'', 'text/plain; charset=utf-8', '204 No Content')
-        handler.request.sendall(response)
-
-
-
-
-
-
+        print("User deleted...")
