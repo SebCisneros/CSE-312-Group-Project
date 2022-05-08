@@ -2,7 +2,7 @@ import json
 import sys
 from pymongo import MongoClient
 
-mongo_client = MongoClient()
+mongo_client = MongoClient('mongo')
 db = mongo_client['cse312']
 
 users_collection = db['users']
@@ -21,20 +21,31 @@ def get_next_id():
         return 1
 
 
-def create(user: dict):
-    users_collection.insert_one(user)
-    user.pop('_id')
+def create(user_data: dict):
+    """Creates record in the database."""
+
+    users_collection.insert_one(user_data)
+    user_data.pop('_id')
 
 
 def list_all():
+    """Returns all the records in the database in  `dict` format."""
+
     all_users = users_collection.find({}, {'_id': 0})
     return list(all_users)
 
 
-# takes a single key value pair and find relevant informations and put them in a list
-def retrieve_single(user: dict):
+def retrieve_document_by_username(user: str):
+    """
+    Retrieves the information based on the username.
+
+    :param user: username in `str` format
+    :return: all user information or `None` if the user doesn't exist.
+    """
+
+    user_name = {'username': user}
     data = []
-    for i in users_collection.find(user):
+    for i in users_collection.find(user_name):
         data.append(i)
     if len(data) > 0:
         data[0].pop('_id')
@@ -43,9 +54,33 @@ def retrieve_single(user: dict):
         return None
 
 
-def update(user_find: dict, user_update: dict):
+def update_by_username(user_find: str, user_update: dict):
+    """
+    Updates the information based on the username.
+
+    :param user_find: username in `str` format
+    :param user_update: information to update in `dictionary` key-value pair format.
+    :return: None if the user doesn't exist.
+    """
+    user_data = retrieve_document_by_username(user_find)
+    if user_data is None:
+        return None
     users_collection.update_one(user_find, {'$set': user_update})
+    print("Data updated successfully...")
 
 
-def delete(user: dict):
+def delete_by_username(user: str):
+    """
+    Deletes the user information if the user exists.
+
+    :param user: username in `str` format.
+    :return: None if the user doesn't exist.
+    """
+    username = {'username': user}
+
+    user_data = retrieve_document_by_username(username)
+    if user_data is None:
+        return None
     users_collection.delete_one(user)
+    print("User deleted successfully...")
+

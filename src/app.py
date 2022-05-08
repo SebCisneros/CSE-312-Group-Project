@@ -11,6 +11,7 @@ import json
 
 
 from backend.router import Router
+import backend.database as db
 
 
 class request_handler(socketserver.BaseRequestHandler):
