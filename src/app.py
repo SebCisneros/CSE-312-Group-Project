@@ -13,6 +13,7 @@ import json
 from pymongo import MongoClient
 
 from backend.router import Router
+import backend.database as db
 
 
 
@@ -181,7 +182,7 @@ class request_handler(socketserver.BaseRequestHandler):
             }
 
             userAccountCollection.insert_one(newUserEntry)
-        
+            # db.create(newUserEntry)
 
 
     def sanitize_input(self, user_input):
