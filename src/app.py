@@ -13,8 +13,8 @@ import json
 from pymongo import MongoClient
 
 from backend.router import Router
+from backend.auth import Auth
 import backend.database as db
-
 
 
 client = MongoClient("mongodb://mongo:27017/newdock")
@@ -23,13 +23,27 @@ usersDB = client['users']
 
 userAccountCollection = usersDB["user_accounts"]
 
+
 class request_handler(socketserver.BaseRequestHandler):
     # List of codes that send content to the client
     content_codes = [b"200 OK", b"201 Created", b"404 Not Found"]
 
-    def create_response(self, http_version, response_code, content_type, content, redirect, encoded_hash):
+    def create_response(self, http_version, response_code, content_type, content, redirect, encoded_hash, cookies):
         response = http_version + b" "
         response += response_code + b"\r\n"
+        if cookies is not None:
+            print(cookies)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            if "username" in cookies:
+                print(cookies["username"])
+                response += b"Set-Cookie: username=" + bytes(cookies["username"], "UTF-8") + b"\r\n"
+            if "xsrf_token" in cookies:
+                print(cookies["xsrf_token"])
+                response += b"Set-Cookie: xsrf_token=" + bytes(cookies["xsrf_token"], "UTF-8") + b"; Max-Age=3600\r\n"
+            if "auth_token" in cookies:
+                print(cookies["auth_token"])
+                response += b"Set-Cookie: auth_token=" + bytes(cookies["auth_token"], "UTF-8") + b"; Max-Age=3600; HttpOnly\r\n"
         if response_code in self.content_codes:
             response += b"Content-Type: " + content_type + b"\r\n" + b"charset:UTF-8\r\n"
             if content_type == b"image/jpeg":
@@ -52,30 +66,22 @@ class request_handler(socketserver.BaseRequestHandler):
             redirect = routing.get_redirect(request)
             if redirect is not None:
                 # redirect to new page
-                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, bytes(redirect, "UTF-8"), None)
+                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, bytes(redirect, "UTF-8"), None, None)
             else:
-                self.create_response(b"HTTP/1.1", b"200 OK", bytes(routing.get_content_type(request), "UTF-8"), routing.get_content(request), None, None)
+                self.create_response(b"HTTP/1.1", b"200 OK", bytes(routing.get_content_type(request), "UTF-8"), routing.get_content(request), None, None, None)
         else:
             # page not found
-            self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None)
-
-    def interpret_POST(self, content):
-        #parse content dictionary here
-        record = content
-        # set response equal to DB modification function
-        response = None
-        # Update routes
-        self.create_response(b"HTTP/1.1", b"201 Created", b"text/json", bytes(json.dumps(response), "UTF-8"), None, None)
+            self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None, None)
 
     def interpret_PUT(self, content, user_id):
         record = json.loads(content)
         # set response equal to DB modification function
         response = None
         if response is None:
-            self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None)
+            self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None, None)
 
     def interpret_DELETE(self, user_id):
-        self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None)
+        self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None, None)
 
     def get_headers(self, received_data):
         decoded_data = received_data.split(b'\r\n\r\n', 1)
@@ -107,40 +113,36 @@ class request_handler(socketserver.BaseRequestHandler):
 
             case "POST":
                 if "Content-Type" in header_dict and "multipart/form-data" in header_dict["Content-Type"]:
-                        data_dict = {}
-                        boundary = header_dict["Content-Type"].split("boundary=", 1)
-                        form_data = content.split(bytes(("--" + boundary[1]), "UTF-8"))
-                        for i in form_data:
-                            if (i != b"") and (i != b"--\r\n"):
-                                decoded_boundary = i.split(b'\r\n\r\n', 1)
-                                boundary_header_array = decoded_boundary[0].decode().split('\r\n')
-                                boundary_header_dict = self.createBoundaryHeaderDict(boundary_header_array)
-                                if "Content-Disposition" in boundary_header_dict:
-                                    disposition_info_array = boundary_header_dict["Content-Disposition"].split("; ")
-                                    disposition_info_dict = self.createDispositionInfoDict(disposition_info_array)
+                    data_dict = {}
+                    boundary = header_dict["Content-Type"].split("boundary=", 1)
+                    form_data = content.split(bytes(("--" + boundary[1]), "UTF-8"))
+                    for i in form_data:
+                        if (i != b"") and (i != b"--\r\n"):
+                            decoded_boundary = i.split(b'\r\n\r\n', 1)
+                            boundary_header_array = decoded_boundary[0].decode().split('\r\n')
+                            boundary_header_dict = self.createBoundaryHeaderDict(boundary_header_array)
+                            if "Content-Disposition" in boundary_header_dict:
+                                disposition_info_array = boundary_header_dict["Content-Disposition"].split("; ")
+                                disposition_info_dict = self.createDispositionInfoDict(disposition_info_array)
 
-                                    if "name" in disposition_info_dict:
-                                        match disposition_info_dict["name"]:
-                                            case "email" | "username" | "password" | "passwordConfirmation":
-                                                parsed_data = self.sanitize_input(decoded_boundary[1].decode()).rstrip()
+                                if "name" in disposition_info_dict:
+                                    match disposition_info_dict["name"]:
+                                        case "email" | "username" | "password" | "passwordConfirmation":
+                                            parsed_data = self.sanitize_input(decoded_boundary[1].decode()).rstrip()
 
-                                                #something = userAccountCollection.insert_one({'x': 1})
+                                            # something = userAccountCollection.insert_one({'x': 1})
 
-                                                data_dict[disposition_info_dict["name"]] = parsed_data
-                        print(data_dict)
+                                            data_dict[disposition_info_dict["name"]] = parsed_data
+                    print(data_dict)
 
-                        #Do stuff to data dic
-                        self.multipartDataProcessing(data_dict)
-                        sys.stdout.flush()
-                        sys.stderr.flush()
-                        self.interpret_POST(data_dict)
-
+                    # Do stuff to data dic
+                    self.multipartDataProcessing(data_dict, request_uri)
 
             case "PUT":
-                self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None)
+                self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None, None)
 
             case "DELETE":
-                self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None)
+                self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None, None)
 
     def handle(self):
         received_data = self.request.recv(2048)
@@ -167,23 +169,48 @@ class request_handler(socketserver.BaseRequestHandler):
                     1].strip('"')
         return disposition_info_dict
 
-    def multipartDataProcessing(self, dataDic):
-        #If user is registering
-        if "passwordConfirmation" in dataDic:
-            self.insertNewUser(dataDic)
+    def multipartDataProcessing(self, form_data_dictionary, request_uri):
+        # If user is registering
+        match request_uri:
+            case "/registration":
+                self.insertNewUser(form_data_dictionary)
+            case "/login":
+                self.login_user(form_data_dictionary)
 
     def insertNewUser(self, dataDic):
-        if dataDic["password"] == dataDic["passwordConfirmation"]:
+        if ("email" in dataDic) and ("username" in dataDic) and ("password" in dataDic):
+            if dataDic["password"] == dataDic["passwordConfirmation"]:
 
-            newUserEntry = {
-                "email": dataDic["email"],
-                "username": dataDic["username"],
-                "password": dataDic["password"]
-            }
+                newUserEntry = {
+                    "email": dataDic["email"],
+                    "username": dataDic["username"],
+                    "password": dataDic["password"]
+                }
+                # db.create(newUserEntry)
+                userAccountCollection.insert_one(newUserEntry)
 
-            userAccountCollection.insert_one(newUserEntry)
-            # db.create(newUserEntry)
+                auth_token = authentication.add_user(newUserEntry["email"], newUserEntry["password"])
+                xsrf_token = authentication.create_token(dataDic["email"])
+                print("Added " + dataDic["email"] + "to authentication database. \n Auth token is " + auth_token + "\n xsrf token is " + xsrf_token)
+                sys.stdout.flush()
+                sys.stderr.flush()
 
+                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/", None, {"auth_token": auth_token, "xsrf_token": xsrf_token, "username": dataDic["username"]})
+            else:
+                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/registration", None, None)
+        else:
+            self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/registration", None, None)
+
+    def login_user(self, data_dictionary):
+        if ("email" in data_dictionary) and ("password" in data_dictionary):
+            auth_token = authentication.login_user(data_dictionary["email"], data_dictionary["password"])
+            xsrf_token = authentication.create_token(data_dictionary["email"])
+            if auth_token is not None:
+                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/", None, {"auth_token": auth_token, "xsrf_token": xsrf_token})
+            else:
+                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/login", None, None)
+        else:
+            self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/login", None, None)
 
     def sanitize_input(self, user_input):
         user_input1 = user_input.replace('&', '&amp;')
@@ -195,16 +222,29 @@ class request_handler(socketserver.BaseRequestHandler):
 if __name__ == "__main__":
     host = "0.0.0.0"
     port = 8080
+    print("Initializing server on port" + str(port) + ".\n\n\n\n\n")
     sys.stdout.flush()
     sys.stderr.flush()
-    routing = Router()
 
-    # Initialize routes
+    # Initialize routing and authentication
+    routing = Router()
+    authentication = Auth()
+
+    # Generate static routes
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), ''))
     routing.create_route("/", None, "text/html", (root + r"/index.html"))
+    png_names = ["ribbit_logo"]
+    for image in png_names:
+        routing.create_route("/frontend/images/" + image + ".png", None, "image/png", (root + r"/frontend/images/" + image + ".png"))
+    jpg_names = ["wednesday"]
+    for image in jpg_names:
+        routing.create_route("/frontend/images/" + image + ".jpg", None, "image/jpeg", (root + r"/frontend/images/" + image + ".jpg"))
+    css_names = ["main", "login"]
+    for stylesheet in css_names:
+        routing.create_route("/frontend/styles/" + stylesheet + ".css", None, "text/css", (root + r"/frontend/styles/" + stylesheet + ".css"))
     routing.create_route("/login", None, "text/html", (root + r"/frontend/pages/login.html"))
     routing.create_route("/registration", None, "text/html", (root + r"/frontend/pages/registration.html"))
-    routing.create_route("/style.css", None, "text/css", (root + r"/style.css"))
+    routing.create_route("/main.css", None, "text/css", (root + r"/main.css"))
     routing.create_route("/functions.js", None, "text/javascript", (root + r"/functions.js"))
 
     with socketserver.ThreadingTCPServer((host, port), request_handler) as server:

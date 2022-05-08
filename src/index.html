@@ -6,12 +6,19 @@
     <link rel="stylesheet" type="text/css" href="./frontend/styles/main.css"/>
 </head>
 <body>
+<div class="title-bar">
+    <img src="./frontend/images/ribbit_logo.png" class="title-bar-logo">
+</div>
 <br/>
 <br/>
-<h1 class="main-header">Chat App</h1>
+<br/>
 <br/>
 <button class="general-button" onclick="window.location.href='/login'">Proceed to Login</button>
 <button class="general-button" onclick="window.location.href='/registration'">Don't have an account? Register.</button>
+<div class="post" id="post-12345">
+    <h1 class="post-title" id="post-12345-title">Today is Wednesday, my dudes!</h1>
+    <img class="post-image" src="./frontend/images/wednesday.jpg">
+</div>
 
 <form action="/image-upload" id="image-form" method="post" enctype="multipart/form-data">
     <label for="image-form-comment">Comment: </label>
