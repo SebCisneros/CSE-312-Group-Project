@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>ribbit</title>
+        <title>Upload</title>
         <link rel="stylesheet" type="text/css" href="./frontend/styles/main.css"/>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,11 +18,16 @@
         <br/>
         <br/>
         <div class="container">
-            <h1 class="container-title">Welcome to ribbit, a site dedicated to</h1>
-            <h1 class="container-title">memeing the days of the week!</h1>
-            <button class="general-button" onclick="window.location.href='/login'">Proceed to Login</button>
-            <br/>
-            <button class="alternate-button" onclick="window.location.href='/registration'">Don't have an account? Register.</button>
+            <h1 class="container-title">Upload</h1>
+            <form action="/image-upload" id="image-form" method="post" enctype="multipart/form-data">
+                <h2 class="upload-header">Post Title: </h2>
+                <input class="text-field" id="image-form-comment" name="comment" cols="40" rows="6" type="text">
+                <h2 class="upload-header">Image: </h2>
+                <input class="upload-file" id="form-file" type="file" name="upload">
+                <br/>
+                <br/>
+                <input class="general-button" type="submit" value="Post">
+            </form>
         </div>
     </body>
 </html>

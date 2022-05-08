@@ -173,11 +173,11 @@ class request_handler(socketserver.BaseRequestHandler):
         # If user is registering
         match request_uri:
             case "/registration":
-                self.insertNewUser(form_data_dictionary)
+                self.register_user(form_data_dictionary)
             case "/login":
                 self.login_user(form_data_dictionary)
 
-    def insertNewUser(self, dataDic):
+    def register_user(self, dataDic):
         if ("email" in dataDic) and ("username" in dataDic) and ("password" in dataDic):
             if dataDic["password"] == dataDic["passwordConfirmation"]:
 
@@ -195,7 +195,7 @@ class request_handler(socketserver.BaseRequestHandler):
                 sys.stdout.flush()
                 sys.stderr.flush()
 
-                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/", None, {"auth_token": auth_token, "xsrf_token": xsrf_token, "username": dataDic["username"]})
+                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/posts", None, {"auth_token": auth_token, "xsrf_token": xsrf_token, "username": dataDic["username"]})
             else:
                 self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/registration", None, None)
         else:
@@ -206,7 +206,7 @@ class request_handler(socketserver.BaseRequestHandler):
             auth_token = authentication.login_user(data_dictionary["email"], data_dictionary["password"])
             xsrf_token = authentication.create_token(data_dictionary["email"])
             if auth_token is not None:
-                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/", None, {"auth_token": auth_token, "xsrf_token": xsrf_token})
+                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/posts", None, {"auth_token": auth_token, "xsrf_token": xsrf_token})
             else:
                 self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/login", None, None)
         else:
@@ -233,6 +233,8 @@ if __name__ == "__main__":
     # Generate static routes
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), ''))
     routing.create_route("/", None, "text/html", (root + r"/index.html"))
+    routing.create_route("/upload", None, "text/html", (root + r"/upload.html"))
+    routing.create_route("/posts", None, "text/html", (root + r"/posts.html"))
     png_names = ["ribbit_logo"]
     for image in png_names:
         routing.create_route("/frontend/images/" + image + ".png", None, "image/png", (root + r"/frontend/images/" + image + ".png"))
@@ -242,8 +244,8 @@ if __name__ == "__main__":
     css_names = ["main", "login"]
     for stylesheet in css_names:
         routing.create_route("/frontend/styles/" + stylesheet + ".css", None, "text/css", (root + r"/frontend/styles/" + stylesheet + ".css"))
-    routing.create_route("/login", None, "text/html", (root + r"/frontend/pages/login.html"))
-    routing.create_route("/registration", None, "text/html", (root + r"/frontend/pages/registration.html"))
+    routing.create_route("/login", None, "text/html", (root + r"/login.html"))
+    routing.create_route("/registration", None, "text/html", (root + r"/registration.html"))
     routing.create_route("/main.css", None, "text/css", (root + r"/main.css"))
     routing.create_route("/functions.js", None, "text/javascript", (root + r"/functions.js"))
 

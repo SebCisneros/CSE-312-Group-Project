@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" type="text/css" href="./frontend/styles/main.css"/>
+    <link rel="stylesheet" type="text/css" href="./frontend/styles/login.css"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+</head>
+    <body>
+        <div class="title-bar">
+            <img src="./frontend/images/ribbit_logo.png" class="title-bar-logo">
+        </div>
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        <div class="container">
+            <h1 class="container-title">Login</h1>
+            <form id="login-form" action="/login" method="post" enctype="multipart/form-data">
+                <h2 class="login-header">Email</h2>
+                <input class="text-field" name="email" type="email"/>
+                <h2 class="login-header">Password</h2>
+                <input class="text-field" name="password" type="password"/>
+                <br/>
+                <button class="general-button" type="submit" value="Post" class="submit-button"><span>Login</span></button>
+            </form>
+            <br/>
+            <button class="alternate-button" onclick="window.location.href='/registration'">Don't have an account? Register.</button>
+        </div>
+    </body>
+</html>

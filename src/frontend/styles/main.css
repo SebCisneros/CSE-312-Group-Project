@@ -16,6 +16,38 @@ html {
     display: block;
     margin-left: auto;
     margin-right: auto;
+    background-color: #036bfc;
+    border: none;
+    border-radius: 10px;
+    padding: 10px;
+    color: white;
+    transition-duration: 0.5s;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 12pt;
+    width: 100%;
+}
+
+.general-button:hover {
+    background-color: #002ea3;
+}
+
+.alternate-button {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #002ea3;
+    border: none;
+    border-radius: 10px;
+    padding: 10px;
+    color: white;
+    transition-duration: 0.5s;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 12pt;
+    width: 100%;
+}
+
+.alternate-button:hover {
+    background-color: #000000;
 }
 
 .title-bar {
@@ -42,4 +74,78 @@ html {
     padding: 20px;
     width: fit-content;
     height: fit-content;
+}
+
+.post-title {
+    font-family: 'Open Sans', sans-serif;
+}
+
+.post-username {
+    font-family: 'Open Sans', sans-serif;
+}
+
+.container-title {
+    font-family: 'Open Sans', sans-serif;
+    text-align: center;
+}
+
+.general-info {
+    font-family: 'Open Sans', sans-serif;
+    text-align: center;
+}
+
+.login-header {
+    font-family: 'Open Sans', sans-serif;
+    text-align: center;
+}
+
+.registration-header {
+    font-family: 'Open Sans', sans-serif;
+    text-align: center;
+}
+
+.upload-header {
+    font-family: 'Open Sans', sans-serif;
+    text-align: center;
+}
+
+.upload-file {
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+    border-style: solid;
+    border-radius: 5px;
+    border-width: 1px;
+    width: 100%;
+}
+
+.text-field {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border-style: solid;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: black;
+    height: 40px;
+    width: 98%;
+    padding: 2px 2px;
+    text-align: center;
+}
+
+.container {
+    margin: auto;
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    padding: 20px;
+    width: fit-content;
+    height: fit-content;
+}
+
+.login-header {
+    text-align: center;
+}
+
+.registration-header {
+    text-align: center;
 }
