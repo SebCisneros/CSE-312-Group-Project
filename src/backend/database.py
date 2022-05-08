@@ -35,12 +35,12 @@ def list_all():
     return list(all_users)
 
 
-def retrieve_document_by_username(user: str):
+def retrieve_data_by_username(user: str):
     """
     Retrieves the information based on the username.
 
     :param user: username in `str` format
-    :return: all user information or `None` if the user doesn't exist.
+    :return: all user information in `dict inside a list format` example: [{}] or `None` if the user doesn't exist.
     """
 
     user_name = {'username': user}
@@ -62,10 +62,11 @@ def update_by_username(user_find: str, user_update: dict):
     :param user_update: information to update in `dictionary` key-value pair format.
     :return: None if the user doesn't exist.
     """
-    user_data = retrieve_document_by_username(user_find)
+    user_to_update = {'username': user_find}
+    user_data = retrieve_data_by_username(user_to_update)
     if user_data is None:
         return None
-    users_collection.update_one(user_find, {'$set': user_update})
+    users_collection.update_one(user_to_update, {'$set': user_update})
     print("Data updated successfully...")
 
 
@@ -78,9 +79,9 @@ def delete_by_username(user: str):
     """
     username = {'username': user}
 
-    user_data = retrieve_document_by_username(username)
+    user_data = retrieve_data_by_username(username)
     if user_data is None:
         return None
-    users_collection.delete_one(user)
+    users_collection.delete_one(username)
     print("User deleted successfully...")
 

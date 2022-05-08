@@ -17,11 +17,11 @@ import backend.database as db
 
 
 
-# client = MongoClient("mongodb://mongo:27017/newdock")
-#
-# usersDB = client['users']
-#
-# userAccountCollection = usersDB["user_accounts"]
+client = MongoClient("mongodb://mongo:27017/newdock")
+
+usersDB = client['users']
+
+userAccountCollection = usersDB["user_accounts"]
 
 class request_handler(socketserver.BaseRequestHandler):
     # List of codes that send content to the client
@@ -181,10 +181,8 @@ class request_handler(socketserver.BaseRequestHandler):
                 "password": dataDic["password"]
             }
 
-            # userAccountCollection.insert_one(newUserEntry)
-            db.create(newUserEntry)
-            print(db.list_all())
-        
+            userAccountCollection.insert_one(newUserEntry)
+            # db.create(newUserEntry)
 
 
     def sanitize_input(self, user_input):
