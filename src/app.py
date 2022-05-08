@@ -1,4 +1,5 @@
 
+from email.mime import multipart
 import socketserver
 
 # stderr & stdout
@@ -9,10 +10,18 @@ import os
 
 import json
 
+from pymongo import MongoClient
 
 from backend.router import Router
 import backend.database as db
 
+
+
+client = MongoClient("mongodb://mongo:27017/newdock")
+
+usersDB = client['users']
+
+userAccountCollection = usersDB["user_accounts"]
 
 class request_handler(socketserver.BaseRequestHandler):
     # List of codes that send content to the client
@@ -87,16 +96,6 @@ class request_handler(socketserver.BaseRequestHandler):
                 while packet_size < int(header_dict["Content-Length"]):
                     content = content + self.request.recv(2048)
                     packet_size += 2048
-                # print(content)
-                sys.stdout.flush()
-                sys.stderr.flush()
-            else:
-                # print(len(received_data))
-                print(received_data)
-                # print(received_data.decode())
-                print(content)
-                sys.stdout.flush()
-                sys.stderr.flush()
 
         if "Content-Type" in header_dict:
             if "text" in header_dict["Content-Type"]:
@@ -107,50 +106,33 @@ class request_handler(socketserver.BaseRequestHandler):
                 self.interpret_GET(request_uri)
 
             case "POST":
-                if "Content-Type" in header_dict:
-                    if "multipart/form-data" in header_dict["Content-Type"]:
+                if "Content-Type" in header_dict and "multipart/form-data" in header_dict["Content-Type"]:
                         data_dict = {}
                         boundary = header_dict["Content-Type"].split("boundary=", 1)
-                        print("boundary=" + boundary[1])
                         form_data = content.split(bytes(("--" + boundary[1]), "UTF-8"))
                         for i in form_data:
                             if (i != b"") and (i != b"--\r\n"):
-                                # print("boundary data:  " + i.decode())
                                 decoded_boundary = i.split(b'\r\n\r\n', 1)
                                 boundary_header_array = decoded_boundary[0].decode().split('\r\n')
-                                boundary_header_dict = {}
-                                for boundary_value in boundary_header_array:
-                                    boundary_value_array = boundary_value.split(":", 1)
-                                    if len(boundary_value_array) > 1:
-                                        boundary_header_dict[boundary_value_array[0]] = str.lstrip(
-                                            boundary_value_array[1])
+                                boundary_header_dict = self.createBoundaryHeaderDict(boundary_header_array)
                                 if "Content-Disposition" in boundary_header_dict:
                                     disposition_info_array = boundary_header_dict["Content-Disposition"].split("; ")
-                                    disposition_info_dict = {}
-                                    for disposition_value in disposition_info_array:
-                                        disposition_value_array = disposition_value.split("=", 1)
-                                        if len(disposition_value_array) > 1:
-                                            disposition_info_dict[disposition_value_array[0]] = disposition_value_array[
-                                                1].strip('"')
+                                    disposition_info_dict = self.createDispositionInfoDict(disposition_info_array)
+
                                     if "name" in disposition_info_dict:
-                                        if disposition_info_dict["name"] == "email":
-                                            parsed_email = self.sanitize_input(decoded_boundary[1].decode())
-                                            print("email: " + parsed_email)
-                                            data_dict["email"] = parsed_email
-                                            sys.stdout.flush()
-                                            sys.stderr.flush()
-                                        if disposition_info_dict["name"] == "username":
-                                            parsed_username = self.sanitize_input(decoded_boundary[1].decode())
-                                            print("username: " + parsed_username)
-                                            data_dict["username"] = parsed_username
-                                            sys.stdout.flush()
-                                            sys.stderr.flush()
-                                        if disposition_info_dict["name"] == "password":
-                                            parsed_password = self.sanitize_input(decoded_boundary[1].decode())
-                                            print("password: " + parsed_password)
-                                            data_dict["password"] = parsed_password
-                                            sys.stdout.flush()
-                                            sys.stderr.flush()
+                                        match disposition_info_dict["name"]:
+                                            case "email" | "username" | "password" | "passwordConfirmation":
+                                                parsed_data = self.sanitize_input(decoded_boundary[1].decode()).rstrip()
+
+                                                #something = userAccountCollection.insert_one({'x': 1})
+
+                                                data_dict[disposition_info_dict["name"]] = parsed_data
+                        print(data_dict)
+
+                        #Do stuff to data dic
+                        self.multipartDataProcessing(data_dict)
+                        sys.stdout.flush()
+                        sys.stderr.flush()
                         self.interpret_POST(data_dict)
 
 
@@ -162,14 +144,46 @@ class request_handler(socketserver.BaseRequestHandler):
 
     def handle(self):
         received_data = self.request.recv(2048)
-        print(received_data)
-        sys.stdout.flush()
-        sys.stderr.flush()
         if len(received_data) == 0:
             return
         client_id = self.client_address[0] + ":" + str(self.client_address[1])
-        print(client_id)
         self.get_headers(received_data)
+
+    def createBoundaryHeaderDict(self, boundary_header_array):
+        boundary_header_dict = {}
+        for boundary_value in boundary_header_array:
+            boundary_value_array = boundary_value.split(":", 1)
+            if len(boundary_value_array) > 1:
+                boundary_header_dict[boundary_value_array[0]] = str.lstrip(
+                    boundary_value_array[1])
+        return boundary_header_dict
+
+    def createDispositionInfoDict(self, disposition_info_array):
+        disposition_info_dict = {}
+        for disposition_value in disposition_info_array:
+            disposition_value_array = disposition_value.split("=", 1)
+            if len(disposition_value_array) > 1:
+                disposition_info_dict[disposition_value_array[0]] = disposition_value_array[
+                    1].strip('"')
+        return disposition_info_dict
+
+    def multipartDataProcessing(self, dataDic):
+        #If user is registering
+        if "passwordConfirmation" in dataDic:
+            self.insertNewUser(dataDic)
+
+    def insertNewUser(self, dataDic):
+        if dataDic["password"] == dataDic["passwordConfirmation"]:
+
+            newUserEntry = {
+                "email": dataDic["email"],
+                "username": dataDic["username"],
+                "password": dataDic["password"]
+            }
+
+            userAccountCollection.insert_one(newUserEntry)
+        
+
 
     def sanitize_input(self, user_input):
         user_input1 = user_input.replace('&', '&amp;')
