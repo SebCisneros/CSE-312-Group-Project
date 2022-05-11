@@ -1,5 +1,13 @@
 import os
 
+
+from pymongo import MongoClient
+client = MongoClient("mongodb://mongo:27017/newdock")
+
+usersDB = client['users']
+
+userAccountCollection = usersDB["user_accounts"]
+
 class Router:
     # Keeps track of where routes redirect to (if applicable)
     redirect_dict = {}
@@ -69,10 +77,40 @@ class Router:
         self.usernames = [" "]
         self.images = [" "]
 
+
+
+
+    def addUserChat(self, file ,users):
+        new_file = file + b'<h2> Chat: </h2>'
+
+        for user in users:
+            userName = user["username"]
+            new_file = new_file + b'<br/>\r\n'
+            new_file = new_file + b'<form action="/sendMessage/'+ bytes(userName, "UTF-8") + b'" id="'+ bytes(userName, "UTF-8") + b'-message-form" method="post" enctype="multipart/form-data">\r\n'
+            new_file = new_file + b'<input value="form_xsrf" name="xsrf_token" hidden>\r\n'
+            new_file = new_file + b'<label for="login-form-' + bytes(userName, "UTF-8") + b'"> ' + bytes(userName, "UTF-8") + b': </label>\r\n'
+            new_file = new_file + b'<input type="text" id="login-form-'+ bytes(userName, "UTF-8") + b'" name="message"><br><br>\r\n'
+            new_file = new_file + b'<input type="submit" value="Send">\r\n'
+            new_file = new_file + b'</form>\r\n'
+        return new_file
+
     def edit_html(self):
         original_html = self.read_file(self.content_dict["/posts"])
+
+        users = userAccountCollection.find({}, {"_id":0})
+
         if len(self.titles) == 0 and len(self.usernames) == 0 and len(self.images) == 0:
-            self.html = original_html
+            new_html = original_html
+            new_html = new_html.split(b"{{CONTENT}}", 1)
+            end_file = new_html[1]
+            new_file = new_html[0]
+
+            if (users != None) or (len(users) != 0):
+                new_file = self.addUserChat(new_file, users)  
+
+            new_file = new_file + end_file
+            self.html = new_file
+
         else:
             new_html = original_html
             new_html = new_html.split(b"{{CONTENT}}", 1)
@@ -87,5 +125,9 @@ class Router:
                         new_file = new_file + b'<p class="post-username">by ' + bytes(self.usernames[i], "UTF-8") + b'</p>\r\n'
                         new_file = new_file + b'<img class="post-image" src="' + bytes(self.images[i], "UTF-8") + b'">\r\n'
                         new_file = new_file + b'</div>\r\n'
+
+            if (users != None) or (len(users) != 0):
+                new_file = self.addUserChat(new_file, users)  
+
             new_file = new_file + end_file
             self.html = new_file
