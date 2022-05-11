@@ -251,7 +251,9 @@ class request_handler(socketserver.BaseRequestHandler):
             auth_token = authentication.login_user(data_dictionary["email"], data_dictionary["password"])
             xsrf_token = authentication.create_token(data_dictionary["email"])
             if auth_token is not None:
-                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/posts", None, {"auth_token": auth_token, "xsrf_token": xsrf_token})
+                userAccount = userAccountCollection.find_one({"email":data_dictionary["email"]})
+                username = userAccount["username"]
+                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/posts", None, {"auth_token": auth_token, "xsrf_token": xsrf_token, "username": username})
             else:
                 self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/login", None, None)
         else:
