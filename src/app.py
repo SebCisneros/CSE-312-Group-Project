@@ -188,6 +188,9 @@ class request_handler(socketserver.BaseRequestHandler):
 
     def multipartDataProcessing(self, form_data_dictionary, request_uri, cookie_dict):
         # If user is registering
+        print(request_uri)
+        sys.stdout.flush()
+        sys.stderr.flush()
         match request_uri:
             case "/registration":
                 self.register_user(form_data_dictionary)
@@ -211,13 +214,11 @@ class request_handler(socketserver.BaseRequestHandler):
     def get_posts_from_database(self):
         posts_list = posting.get_all_posts()
         if posts_list is not None:
-            print(posts_list)
-            sys.stdout.flush()
-            sys.stderr.flush()
             routing.flush_posts()
             for post in posts_list:
-                routing.create_route("/posts/" + post["image_name"], None, "image/jpeg", post["image_path"])
-                routing.add_post(post["title"], post["username"], post["image_path"])
+                if ("image_name" in post) and ("image_path" in post) and ("username" in post):
+                    routing.create_route("/posts/" + post["image_name"], None, "image/jpeg", post["image_path"])
+                    routing.add_post(post["title"], post["username"], post["image_path"])
             routing.edit_html()
             routing.create_route("/posts", None, "text/html", (root + r"/posts.html"))
 
