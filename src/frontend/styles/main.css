@@ -50,6 +50,27 @@ html {
     background-color: #000000;
 }
 
+.title-button {
+    position: absolute;
+    right: 1vw;
+    top: 2vh;
+    background-color: #036bfc;
+    border: none;
+    border-radius: 10px;
+    padding: 10px;
+    color: white;
+    transition-duration: 0.5s;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 3vh;
+    width: fit-content;
+    line-height: 2vh;
+    height: 5vh;
+}
+
+.title-button:hover {
+    background-color: #002ea3;
+}
+
 .title-bar {
     position: fixed;
     display: block;
@@ -74,6 +95,7 @@ html {
     padding: 20px;
     width: fit-content;
     height: fit-content;
+    max-width: 50%;
 }
 
 .post-title {
@@ -82,6 +104,10 @@ html {
 
 .post-username {
     font-family: 'Open Sans', sans-serif;
+}
+
+.post-image {
+    width: 100%;
 }
 
 .container-title {
