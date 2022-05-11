@@ -9,11 +9,13 @@ import sys
 import os
 
 import json
+import random
 
 from pymongo import MongoClient
 
 from backend.router import Router
 from backend.auth import Auth
+from backend.posts import Posts
 import backend.database as db
 
 
@@ -27,6 +29,7 @@ userAccountCollection = usersDB["user_accounts"]
 class request_handler(socketserver.BaseRequestHandler):
     # List of codes that send content to the client
     content_codes = [b"200 OK", b"201 Created", b"404 Not Found"]
+    post_count = 0
 
     def create_response(self, http_version, response_code, content_type, content, redirect, encoded_hash, cookies):
         response = http_version + b" "
@@ -107,8 +110,18 @@ class request_handler(socketserver.BaseRequestHandler):
             if "text" in header_dict["Content-Type"]:
                 content = content.decode()
 
+        cookieDict = {}
+        if "Cookie" in header_dict:
+            cookieData = header_dict["Cookie"]
+            cookieData = cookieData.split("; ")
+            for data in cookieData:
+                data = data.split("=")
+                cookieDict[data[0]] = data[1]
+
         match request_method:
             case "GET":
+                self.get_posts_from_database()
+                routing.edit_html()
                 self.interpret_GET(request_uri)
 
             case "POST":
@@ -127,16 +140,20 @@ class request_handler(socketserver.BaseRequestHandler):
 
                                 if "name" in disposition_info_dict:
                                     match disposition_info_dict["name"]:
-                                        case "email" | "username" | "password" | "passwordConfirmation":
+                                        case "email" | "username" | "password" | "passwordConfirmation" | "comment":
                                             parsed_data = self.sanitize_input(decoded_boundary[1].decode()).rstrip()
 
                                             # something = userAccountCollection.insert_one({'x': 1})
 
                                             data_dict[disposition_info_dict["name"]] = parsed_data
+                                        case "upload":
+                                            image_data = decoded_boundary[1]
+                                            data_dict[disposition_info_dict["name"]] = image_data
+
                     print(data_dict)
 
                     # Do stuff to data dic
-                    self.multipartDataProcessing(data_dict, request_uri)
+                    self.multipartDataProcessing(data_dict, request_uri, cookieDict)
 
             case "PUT":
                 self.create_response(b"HTTP/1.1", b"404 Not Found", b"text/plain", b"404: Content not found.", None, None, None)
@@ -169,13 +186,41 @@ class request_handler(socketserver.BaseRequestHandler):
                     1].strip('"')
         return disposition_info_dict
 
-    def multipartDataProcessing(self, form_data_dictionary, request_uri):
+    def multipartDataProcessing(self, form_data_dictionary, request_uri, cookie_dict):
         # If user is registering
+        print(request_uri)
+        sys.stdout.flush()
+        sys.stderr.flush()
         match request_uri:
             case "/registration":
                 self.register_user(form_data_dictionary)
             case "/login":
                 self.login_user(form_data_dictionary)
+            case "/image-upload":
+                self.create_post(form_data_dictionary, cookie_dict)
+
+    def create_post(self, data_dictionary, cookie_dict):
+        if ("upload" in data_dictionary) and ("comment" in data_dictionary) and ("username" in cookie_dict):
+            save_path = './posts'
+            file_name = "post-" + str(random.randrange(0, 100000000)) + "-image"
+            full_name = os.path.join(save_path, file_name)
+            with open(full_name, "wb") as image_file:
+                image_file.write(data_dictionary["upload"])
+            posting.add_post(cookie_dict["username"], data_dictionary["comment"], full_name, file_name)
+            self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/posts", None, None)
+        else:
+            self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/upload", None, None)
+
+    def get_posts_from_database(self):
+        posts_list = posting.get_all_posts()
+        if posts_list is not None:
+            routing.flush_posts()
+            for post in posts_list:
+                if ("image_name" in post) and ("image_path" in post) and ("username" in post):
+                    routing.create_route("/posts/" + post["image_name"], None, "image/jpeg", post["image_path"])
+                    routing.add_post(post["title"], post["username"], post["image_path"])
+            routing.edit_html()
+            routing.create_route("/posts", None, "text/html", (root + r"/posts.html"))
 
     def register_user(self, dataDic):
         if ("email" in dataDic) and ("username" in dataDic) and ("password" in dataDic):
@@ -229,7 +274,7 @@ if __name__ == "__main__":
     # Initialize routing and authentication
     routing = Router()
     authentication = Auth()
-
+    posting = Posts()
     # Generate static routes
     root = os.path.realpath(os.path.join(os.path.dirname(__file__), ''))
     routing.create_route("/", None, "text/html", (root + r"/index.html"))
