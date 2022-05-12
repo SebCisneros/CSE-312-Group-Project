@@ -1,5 +1,6 @@
 import os
 
+
 from pymongo import MongoClient
 client = MongoClient("mongodb://mongo:27017/newdock")
 
@@ -76,6 +77,9 @@ class Router:
         self.usernames = [" "]
         self.images = [" "]
 
+
+
+
     def addUserChat(self, file ,users):
         new_file = file + b'<h2> Chat: </h2>'
 
@@ -92,13 +96,21 @@ class Router:
 
     def edit_html(self):
         original_html = self.read_file(self.content_dict["/posts"])
+
         users = userAccountCollection.find({}, {"_id":0})
 
         if len(self.titles) == 0 and len(self.usernames) == 0 and len(self.images) == 0:
-            if (users != None):
-                self.html = self.addUserChat(original_html, users)
-            else:
-                self.html = original_html
+            new_html = original_html
+            new_html = new_html.split(b"{{CONTENT}}", 1)
+            end_file = new_html[1]
+            new_file = new_html[0]
+
+            if (users != None) or (len(users) != 0):
+                new_file = self.addUserChat(new_file, users)
+
+            new_file = new_file + end_file
+            self.html = new_file
+
         else:
             new_html = original_html
             new_html = new_html.split(b"{{CONTENT}}", 1)
@@ -113,7 +125,9 @@ class Router:
                         new_file = new_file + b'<p class="post-username">by ' + bytes(self.usernames[i], "UTF-8") + b'</p>\r\n'
                         new_file = new_file + b'<img class="post-image" src="' + bytes(self.images[i], "UTF-8") + b'">\r\n'
                         new_file = new_file + b'</div>\r\n'
-            if (users != None):
+
+            if (users != None) or (len(users) != 0):
                 new_file = self.addUserChat(new_file, users)
+
             new_file = new_file + end_file
             self.html = new_file

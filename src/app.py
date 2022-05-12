@@ -11,8 +11,6 @@ import os
 import json
 import random
 
-from pymongo import MongoClient
-
 from backend.router import Router
 from backend.auth import Auth
 from backend.posts import Posts
@@ -20,7 +18,7 @@ import backend.database as db
 from backend.websocket_parser import WSFrame
 import backend.websocket_helper as ws
 
-
+from pymongo import MongoClient
 client = MongoClient("mongodb://mongo:27017/newdock")
 
 usersDB = client['users']
