@@ -17,6 +17,7 @@ from backend.router import Router
 from backend.auth import Auth
 from backend.posts import Posts
 import backend.database as db
+import backend.websocket_helper as ws
 
 
 client = MongoClient("mongodb://mongo:27017/newdock")
@@ -30,6 +31,7 @@ class request_handler(socketserver.BaseRequestHandler):
     # List of codes that send content to the client
     content_codes = [b"200 OK", b"201 Created", b"404 Not Found"]
     post_count = 0
+    key = ''    # for websocket
 
     def create_response(self, http_version, response_code, content_type, content, redirect, encoded_hash, cookies):
         response = http_version + b" "
@@ -70,6 +72,16 @@ class request_handler(socketserver.BaseRequestHandler):
             if redirect is not None:
                 # redirect to new page
                 self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, bytes(redirect, "UTF-8"), None, None)
+            # websocket handshake
+            elif request == '/websocket':
+                print("working on handshake response\n")
+                key = request_handler.key
+                hashed_key = ws.compute_accept(key).encode()
+                print("Hashed key: ")
+                print(hashed_key)
+                print()
+                self.create_response(b"HTTP/1.1", b"101 Switching Protocols", b"NA", b"", None, hashed_key, None)
+
             else:
                 self.create_response(b"HTTP/1.1", b"200 OK", bytes(routing.get_content_type(request), "UTF-8"), routing.get_content(request), None, None, None)
         else:
@@ -120,6 +132,12 @@ class request_handler(socketserver.BaseRequestHandler):
 
         match request_method:
             case "GET":
+                # getting "'Sec-WebSocket-Key" for websocket
+                if request_uri == "/websocket":
+                    print("Storing Sec-WebSocket-Key....")
+                    request_handler.key = header_dict["Sec-WebSocket-Key"]
+                    print("Stored...")
+
                 self.get_posts_from_database()
                 routing.edit_html()
                 self.interpret_GET(request_uri)
@@ -282,6 +300,9 @@ if __name__ == "__main__":
     routing.create_route("/", None, "text/html", (root + r"/index.html"))
     routing.create_route("/upload", None, "text/html", (root + r"/upload.html"))
     routing.create_route("/posts", None, "text/html", (root + r"/posts.html"))
+    routing.create_route("/posts.js", None, "text/javascript", (root + r"/posts.js"))
+    routing.create_route("/websocket", None, "NA", b'')
+
     png_names = ["ribbit_logo"]
     for image in png_names:
         routing.create_route("/frontend/images/" + image + ".png", None, "image/png", (root + r"/frontend/images/" + image + ".png"))
