@@ -17,6 +17,7 @@ from backend.router import Router
 from backend.auth import Auth
 from backend.posts import Posts
 import backend.database as db
+from backend.websocket_parser import WSFrame
 import backend.websocket_helper as ws
 
 
@@ -32,6 +33,8 @@ class request_handler(socketserver.BaseRequestHandler):
     content_codes = [b"200 OK", b"201 Created", b"404 Not Found"]
     post_count = 0
     key = ''    # for websocket
+    user = ''
+    websocket_connections = []
 
     def create_response(self, http_version, response_code, content_type, content, redirect, encoded_hash, cookies):
         response = http_version + b" "
@@ -62,6 +65,8 @@ class request_handler(socketserver.BaseRequestHandler):
                 response += b"Upgrade: websocket\r\n"
                 response += b"Connection: Upgrade\r\n"
                 response += b"Sec-WebSocket-Accept: " + encoded_hash + b"\r\n\r\n"
+                print("Where will the control return????")
+                print()
             if response_code != b"101 Switching Protocols":
                 response += b"Content-Length: 0\r\n"
         self.request.sendall(response)
@@ -81,6 +86,57 @@ class request_handler(socketserver.BaseRequestHandler):
                 print(hashed_key)
                 print()
                 self.create_response(b"HTTP/1.1", b"101 Switching Protocols", b"NA", b"", None, hashed_key, None)
+                print("Buffering and WS parsing starts here.")
+                # parse, control returns here
+                # here, just validated
+                # get the user name from the page cookies
+
+                username = request_handler.user
+                handler = self
+
+                request_handler.websocket_connections.append({'username': username, 'socket': handler})
+
+                while True:
+                    ws_frame_raw = self.request.recv(1024)
+                    print(ws_frame_raw)
+                    ws_frame = WSFrame(ws_frame_raw)
+                    if ws_frame.opcode == 8:
+                        print("Disconnection")
+                        print(request_handler.websocket_connections)
+                        to_delete = None
+
+                        for connection in request_handler.websocket_connections:
+                            if connection['socket'] == handler:
+                                to_delete = connection
+                        if to_delete:
+                            request_handler.websocket_connections.remove(to_delete)
+                        print(request_handler.websocket_connections)
+                        break
+
+                    while not ws_frame.finished_buffering:
+                        more_bytes = handler.request.recv(1024)
+                        ws_frame.frame_bytes = ws_frame.frame_bytes + more_bytes
+                        ws_frame.check_payload()
+                    ws_frame.extract_payload()
+                    ws_frame.print_frame()
+                    message_json = ws_frame.payload.decode()
+                    message = json.loads(message_json)
+                    message_type = message['messageType']
+
+                    if message_type == 'chatMessage':
+                        # {'message_type': 'chatMessage', 'comment': comment}
+                        for user in request_handler.websocket_connections:
+                            message_data = {'messageType': 'chatMessage', 'username': self.sanitize_input(username),
+                                            'comment': self.sanitize_input(message['comment'])}
+                            # for printing the chats in the html page
+                            # history.append({'username': username, 'comment': message['comment']})
+                            print("sending: " + str(message_data))
+                            message_bytes = json.dumps(message_data).encode()
+                            to_send = ws.generate_frame(message_bytes)
+                            user['socket'].request.sendall(to_send)
+                    else:
+                        print("Invalid WS messageType")
+
 
             else:
                 self.create_response(b"HTTP/1.1", b"200 OK", bytes(routing.get_content_type(request), "UTF-8"), routing.get_content(request), None, None, None)
@@ -136,11 +192,14 @@ class request_handler(socketserver.BaseRequestHandler):
                 if request_uri == "/websocket":
                     print("Storing Sec-WebSocket-Key....")
                     request_handler.key = header_dict["Sec-WebSocket-Key"]
+                    if 'username' in cookieDict:
+                        request_handler.user = cookieDict['username']
                     print("Stored...")
 
                 self.get_posts_from_database()
                 routing.edit_html()
                 self.interpret_GET(request_uri)
+                print("Parsing in the get_headers")
 
             case "POST":
                 if "Content-Type" in header_dict and "multipart/form-data" in header_dict["Content-Type"]:
