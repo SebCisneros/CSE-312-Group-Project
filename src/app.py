@@ -31,8 +31,8 @@ class request_handler(socketserver.BaseRequestHandler):
     content_codes = [b"200 OK", b"201 Created", b"404 Not Found"]
     post_count = 0
     key = ''    # for websocket
-    user = ''
-    websocket_connections = []
+    user = ''   # username from the parsed cookie
+    websocket_connections = []  # stores username & the class request_handler
 
     def create_response(self, http_version, response_code, content_type, content, redirect, encoded_hash, cookies):
         response = http_version + b" "
@@ -63,8 +63,8 @@ class request_handler(socketserver.BaseRequestHandler):
                 response += b"Upgrade: websocket\r\n"
                 response += b"Connection: Upgrade\r\n"
                 response += b"Sec-WebSocket-Accept: " + encoded_hash + b"\r\n\r\n"
-                print("Where will the control return????")
-                print()
+                # print("Where will the control return????")
+                # print()
             if response_code != b"101 Switching Protocols":
                 response += b"Content-Length: 0\r\n"
         self.request.sendall(response)
@@ -77,14 +77,14 @@ class request_handler(socketserver.BaseRequestHandler):
                 self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, bytes(redirect, "UTF-8"), None, None)
             # websocket handshake
             elif request == '/websocket':
-                print("working on handshake response\n")
+                # print("working on handshake response\n")
                 key = request_handler.key
                 hashed_key = ws.compute_accept(key).encode()
-                print("Hashed key: ")
-                print(hashed_key)
-                print()
+                # print("Hashed key: ")
+                # print(hashed_key)
+                # print()
                 self.create_response(b"HTTP/1.1", b"101 Switching Protocols", b"NA", b"", None, hashed_key, None)
-                print("Buffering and WS parsing starts here.")
+                # print("Buffering and WS parsing starts here.")
                 # parse, control returns here
                 # here, just validated
                 # get the user name from the page cookies
@@ -188,16 +188,16 @@ class request_handler(socketserver.BaseRequestHandler):
             case "GET":
                 # getting "'Sec-WebSocket-Key" for websocket
                 if request_uri == "/websocket":
-                    print("Storing Sec-WebSocket-Key....")
+                    # print("Storing Sec-WebSocket-Key....")
                     request_handler.key = header_dict["Sec-WebSocket-Key"]
                     if 'username' in cookieDict:
                         request_handler.user = cookieDict['username']
-                    print("Stored...")
+                    # print("Stored...")
 
                 self.get_posts_from_database()
                 routing.edit_html()
                 self.interpret_GET(request_uri)
-                print("Parsing in the get_headers")
+                # print("Parsing in the get_headers")
 
             case "POST":
                 if "Content-Type" in header_dict and "multipart/form-data" in header_dict["Content-Type"]:
