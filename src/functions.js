@@ -14,3 +14,16 @@ function confirm_registration(){
         window.alert("The passwords do not match. Please re-enter your password.");
     }
 }
+
+function load() {
+    var page_cookie = document.cookie.split('; ');
+    var cookie_dict = {};
+    for(i = 0; i < page_cookie.length; i++){
+        var cookie = page_cookie[i].split("=");
+        cookie_dict[cookie[0]] = cookie[1];
+    }
+    console.log(cookie_dict);
+    if("xsrf_token" in cookie_dict){
+        document.getElementById("token").innerHTML += '<input value="' + cookie_dict["xsrf_token"] + '" name="xsrf_token" hidden>';
+    }
+}

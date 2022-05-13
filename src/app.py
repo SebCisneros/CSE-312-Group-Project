@@ -44,6 +44,9 @@ class request_handler(socketserver.BaseRequestHandler):
             if "username" in cookies:
                 print(cookies["username"])
                 response += b"Set-Cookie: username=" + bytes(cookies["username"], "UTF-8") + b"\r\n"
+            if "email" in cookies:
+                print(cookies["email"])
+                response += b"Set-Cookie: email=" + bytes(cookies["email"], "UTF-8") + b"\r\n"
             if "xsrf_token" in cookies:
                 print(cookies["xsrf_token"])
                 response += b"Set-Cookie: xsrf_token=" + bytes(cookies["xsrf_token"], "UTF-8") + b"; Max-Age=3600\r\n"
@@ -224,6 +227,9 @@ class request_handler(socketserver.BaseRequestHandler):
                                         case "upload":
                                             image_data = decoded_boundary[1]
                                             data_dict[disposition_info_dict["name"]] = image_data
+                                        case "xsrf_token":
+                                            token_data = decoded_boundary[1].decode()[:-2]
+                                            data_dict[disposition_info_dict["name"]] = token_data
 
                     print(data_dict)
 
@@ -272,7 +278,16 @@ class request_handler(socketserver.BaseRequestHandler):
             case "/login":
                 self.login_user(form_data_dictionary)
             case "/image-upload":
-                self.create_post(form_data_dictionary, cookie_dict)
+                print(form_data_dictionary["xsrf_token"])
+                sys.stdout.flush()
+                sys.stderr.flush()
+                if ("xsrf_token" in form_data_dictionary) and ("email" in cookie_dict):
+                    if authentication.verify_token(form_data_dictionary["xsrf_token"], cookie_dict["email"]):
+                        self.create_post(form_data_dictionary, cookie_dict)
+                    else:
+                        self.create_response(b"HTTP/1.1", b"403 Forbidden", b"text/plain", b"403: Forbidden.", None, None, None)
+                else:
+                    self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/", None, None)
 
     def create_post(self, data_dictionary, cookie_dict):
         if ("upload" in data_dictionary) and ("comment" in data_dictionary) and ("username" in cookie_dict):
@@ -315,7 +330,7 @@ class request_handler(socketserver.BaseRequestHandler):
                 sys.stdout.flush()
                 sys.stderr.flush()
 
-                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/posts", None, {"auth_token": auth_token, "xsrf_token": xsrf_token, "username": dataDic["username"]})
+                self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/posts", None, {"auth_token": auth_token, "xsrf_token": xsrf_token, "username": dataDic["username"], "email": dataDic["email"]})
             else:
                 self.create_response(b"HTTP/1.1", b"301 Moved Permanently", None, None, b"/registration", None, None)
         else:
