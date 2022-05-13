@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Posts</title>
+        <title>Chat</title>
         <link rel="stylesheet" type="text/css" href="./frontend/styles/main.css"/>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,20 +11,18 @@
     <body>
         <div class="title-bar">
             <img src="./frontend/images/ribbit_logo.png" class="title-bar-logo">
-            <button class="title-button" onclick="window.location.href='/upload'">Upload a post!</button>
         </div>
         <br/>
         <br/>
         <br/>
         <br/>
         <br/>
-        <div class="post" id="post-12345">
-            <h1 class="post-title" id="post-12345-title">Today is Wednesday, my dudes!</h1>
-            <p class="post-username" id="post-12345-username">by sonic.exe</p>
-            <img class="post-image" src="./frontend/images/wednesday.jpg">
+        <div class="container">
+            <label for="chat-comment">Chat: </label>
+            <input id="chat-comment" type="text" name="comment">
+            <button onclick="sendMessage()">Send</button>
+            <div id="chat"></div>
         </div>
-        {{CONTENT}}
-
-        <script src="posts.js"></script>
+    <script src="chat.js"></script>
     </body>
 </html>

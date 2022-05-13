@@ -372,7 +372,8 @@ if __name__ == "__main__":
     routing.create_route("/", None, "text/html", (root + r"/index.html"))
     routing.create_route("/upload", None, "text/html", (root + r"/upload.html"))
     routing.create_route("/posts", None, "text/html", (root + r"/posts.html"))
-    routing.create_route("/posts.js", None, "text/javascript", (root + r"/posts.js"))
+    routing.create_route("/chat", None, "text/html", (root + r"/chat.html"))
+    routing.create_route("/chat.js", None, "text/javascript", (root + r"/chat.js"))
     routing.create_route("/websocket", None, "NA", b'')
 
     png_names = ["ribbit_logo"]
