@@ -106,7 +106,7 @@ class Router:
             new_file = new_html[0]
 
             if (users != None) or (len(users) != 0):
-                new_file = self.addUserChat(new_file, users)  
+                new_file = self.addUserChat(new_file, users)
 
             new_file = new_file + end_file
             self.html = new_file
@@ -127,7 +127,7 @@ class Router:
                         new_file = new_file + b'</div>\r\n'
 
             if (users != None) or (len(users) != 0):
-                new_file = self.addUserChat(new_file, users)  
+                new_file = self.addUserChat(new_file, users)
 
             new_file = new_file + end_file
             self.html = new_file
