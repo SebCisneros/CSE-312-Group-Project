@@ -27,3 +27,16 @@ function load() {
         document.getElementById("token").innerHTML += '<input value="' + cookie_dict["xsrf_token"] + '" name="xsrf_token" hidden>';
     }
 }
+
+function welcome() {
+    var page_cookie = document.cookie.split('; ');
+    var cookie_dict = {};
+    for(i = 0; i < page_cookie.length; i++){
+        var cookie = page_cookie[i].split("=");
+        cookie_dict[cookie[0]] = cookie[1];
+    }
+    console.log(cookie_dict);
+    if("username" in cookie_dict){
+        document.getElementById("welcome-text").innerHTML += '<h1 class="welcome-message">Welcome, ' + cookie_dict["username"] + '!</h1>';
+    }
+}

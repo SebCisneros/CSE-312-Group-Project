@@ -8,16 +8,18 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
     </head>
-    <body>
+    <body onload="welcome();">
         <div class="title-bar">
             <img src="./frontend/images/ribbit_logo.png" class="title-bar-logo">
             <button class="title-button" onclick="window.location.href='/upload'">Upload a post!</button>
+            <button class="title-button-2" onclick="window.location.href='/chat'">Message another user!</button>
         </div>
         <br/>
         <br/>
         <br/>
         <br/>
         <br/>
+        <div id="welcome-text"></div>
         <div class="post" id="post-12345">
             <h1 class="post-title" id="post-12345-title">Today is Wednesday, my dudes!</h1>
             <p class="post-username" id="post-12345-username">by sonic.exe</p>
@@ -25,6 +27,6 @@
         </div>
         {{CONTENT}}
 
-        <script src="posts.js"></script>
+        <script src="functions.js"></script>
     </body>
 </html>
